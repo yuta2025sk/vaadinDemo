@@ -1,5 +1,8 @@
 package com.example.vaadinDemo;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.vaadin.flow.component.button.Button;
@@ -16,6 +19,9 @@ public class MainView extends VerticalLayout {
 
     private String selectedName;
     private Set<String> selectedDays;
+    // シフト情報を保存するMap
+    private Map<String, Set<String>> shiftMap = new HashMap<>();
+    private final String[] members = {"jun", "yuta", "ryota"};
 
     public MainView() {
         setSizeFull();
@@ -23,6 +29,10 @@ public class MainView extends VerticalLayout {
         setJustifyContentMode(JustifyContentMode.CENTER);
         // Lighten the background
         getStyle().set("background", "linear-gradient(135deg, #e0e7ef 0%, #bfc9d9 100%)");
+        // 初期化: 全員未回答
+        for (String member : members) {
+            shiftMap.put(member, null);
+        }
         showNameSelection();
     }
 
@@ -96,7 +106,9 @@ public class MainView extends VerticalLayout {
 
         Button confirmButton = new Button("確定", event -> {
             if (dayGroup.getSelectedItems() != null && !dayGroup.getSelectedItems().isEmpty()) {
-                selectedDays = dayGroup.getSelectedItems();
+                selectedDays = new HashSet<>(dayGroup.getSelectedItems());
+                // 回答を保存
+                shiftMap.put(selectedName, selectedDays);
                 showSummary();
             }
         });
@@ -125,6 +137,63 @@ public class MainView extends VerticalLayout {
         Label days = new Label("勤務曜日: " + String.join(", ", selectedDays));
         days.getStyle().set("color", "#232526").set("font-size", "1.2rem");
 
-        add(summaryTitle, name, days);
+        Button viewTableButton = new Button("全員の勤務表を見る", e -> showShiftTable());
+        viewTableButton.getStyle()
+                .set("background", "#00c6ff")
+                .set("color", "#fff")
+                .set("font-size", "1.2rem")
+                .set("border-radius", "8px");
+
+        add(summaryTitle, name, days, viewTableButton);
+    }
+
+    private void showShiftTable() {
+        removeAll();
+
+        H1 tableTitle = new H1("ゆげデザインラボ 勤務表");
+        tableTitle.getStyle()
+                .set("color", "#232526")
+                .set("font-size", "2.5rem")
+                .set("margin-bottom", "1.5rem");
+
+        com.vaadin.flow.component.grid.Grid<MemberShift> grid = new com.vaadin.flow.component.grid.Grid<>(MemberShift.class, false);
+        grid.addColumn(MemberShift::getName).setHeader("名前").setAutoWidth(true);
+        grid.addColumn(MemberShift::getDays).setHeader("勤務曜日").setAutoWidth(true);
+
+        java.util.List<MemberShift> list = new java.util.ArrayList<>();
+        for (String member : members) {
+            Set<String> days = shiftMap.get(member);
+            if (days == null) {
+                list.add(new MemberShift(member, "未回答"));
+            } else {
+                list.add(new MemberShift(member, String.join(", ", days)));
+            }
+        }
+        grid.setItems(list);
+        grid.setWidth("500px");
+        grid.getStyle().set("background", "rgba(255,255,255,0.95)").set("border-radius", "16px");
+
+        Button backButton = new Button("戻る", e -> showNameSelection());
+        backButton.getStyle()
+                .set("background", "#00c6ff")
+                .set("color", "#fff")
+                .set("font-size", "1.2rem")
+                .set("border-radius", "8px");
+
+        add(tableTitle, grid, backButton);
+    }
+
+    // 勤務表表示用の内部クラス
+    public static class MemberShift {
+        private String name;
+        private String days;
+
+        public MemberShift(String name, String days) {
+            this.name = name;
+            this.days = days;
+        }
+
+        public String getName() { return name; }
+        public String getDays() { return days; }
     }
 }
