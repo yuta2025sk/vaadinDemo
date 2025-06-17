@@ -150,7 +150,7 @@ public class MainView extends VerticalLayout {
     private void showShiftTable() {
         removeAll();
 
-        H1 tableTitle = new H1("ゆげデザインラボ 勤務表");
+        H1 tableTitle = new H1("ゆげデザインラボ シフト");
         tableTitle.getStyle()
                 .set("color", "#232526")
                 .set("font-size", "2.5rem")
